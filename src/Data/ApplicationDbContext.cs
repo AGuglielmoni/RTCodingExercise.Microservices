@@ -1,4 +1,6 @@
-﻿namespace Catalog.API.Data
+﻿using Microsoft.EntityFrameworkCore;
+
+namespace RTC.Data
 {
     public class ApplicationDbContext : DbContext
     {

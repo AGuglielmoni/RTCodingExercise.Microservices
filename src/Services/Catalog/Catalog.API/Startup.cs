@@ -1,6 +1,10 @@
 ﻿using MassTransit;
 using Microsoft.OpenApi.Models;
 using RabbitMQ.Client;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Catalog.API.Data;
+using PlateLogic;
 
 namespace Catalog.API
 {
@@ -13,48 +17,43 @@ namespace Catalog.API
 
         public IConfiguration Configuration { get; }
 
-        // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            // Add framework services.
             services.AddDbContext<ApplicationDbContext>(options =>
-                    options.UseSqlServer(Configuration["ConnectionString"],
-                    sqlServerOptionsAction: sqlOptions =>
-                    {
-                        sqlOptions.MigrationsAssembly(typeof(Startup).GetTypeInfo().Assembly.GetName().Name);
-                        //Configuring Connection Resiliency: https://docs.microsoft.com/en-us/ef/core/miscellaneous/connection-resiliency 
-                        sqlOptions.EnableRetryOnFailure(maxRetryCount: 15, maxRetryDelay: TimeSpan.FromSeconds(30), errorNumbersToAdd: null);
-                    }));
+                options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection"), sqlOptions =>
+                {
+                    sqlOptions.MigrationsAssembly(typeof(Startup).Assembly.FullName);
+                    sqlOptions.EnableRetryOnFailure(
+                        maxRetryCount: 15,
+                        maxRetryDelay: TimeSpan.FromSeconds(30),
+                        errorNumbersToAdd: null);
+                }));
+
+            services.AddScoped<IPlateHelper, PlateHelper>();
 
             services.AddSwaggerGen(options =>
             {
                 options.SwaggerDoc("v1", new OpenApiInfo
                 {
-                    Title = "eShopOnContainers - Catalog HTTP API",
+                    Title = "Catalog API",
                     Version = "v1",
-                    Description = "The Catalog Microservice HTTP API. This is a Data-Driven/CRUD microservice sample"
+                    Description = "Catalog API with integrated plate management"
                 });
             });
 
             services.AddCors(options =>
             {
-                options.AddPolicy("CorsPolicy",
-                    builder => builder
-                    .SetIsOriginAllowed((host) => true)
+                options.AddPolicy("CorsPolicy", builder => builder
+                    .SetIsOriginAllowed(_ => true)
                     .AllowAnyMethod()
                     .AllowAnyHeader()
                     .AllowCredentials());
             });
 
             services.AddControllers();
-            services.AddControllersWithViews();
-            services.AddRazorPages();
 
             services.AddMassTransit(x =>
             {
-                //x.AddConsumer<ConsumerClass>();
-
-                //ADD CONSUMERS HERE
                 x.UsingRabbitMq((context, cfg) =>
                 {
                     cfg.Host(Configuration["EventBusConnection"], "/", h =>
@@ -78,8 +77,7 @@ namespace Catalog.API
             services.AddMassTransitHostedService();
         }
 
-        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory loggerFactory)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             if (env.IsDevelopment())
             {
@@ -90,27 +88,18 @@ namespace Catalog.API
                 app.UseExceptionHandler("/Home/Error");
             }
 
+            app.UseStaticFiles();
+
             var pathBase = Configuration["PATH_BASE"];
             if (!string.IsNullOrEmpty(pathBase))
             {
                 app.UsePathBase(pathBase);
             }
 
-            app.UseStaticFiles();
-
-            // Make work identity server redirections in Edge and lastest versions of browers. WARN: Not valid in a production environment.
-            app.Use(async (context, next) =>
-            {
-                context.Response.Headers.Add("Content-Security-Policy", "script-src 'unsafe-inline'");
-                await next();
-            });
-
-            app.UseForwardedHeaders();
-
             app.UseSwagger()
                 .UseSwaggerUI(c =>
                 {
-                    c.SwaggerEndpoint($"{ (!string.IsNullOrEmpty(pathBase) ? pathBase : string.Empty) }/swagger/v1/swagger.json", "Catalog.API V1");
+                    c.SwaggerEndpoint($"{pathBase}/swagger/v1/swagger.json", "Catalog API V1");
                 });
 
             app.UseRouting();

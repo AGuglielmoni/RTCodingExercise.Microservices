@@ -1,4 +1,5 @@
-﻿using MassTransit;
+﻿using Consumers.RTCConsumer;
+using MassTransit;
 using RabbitMQ.Client;
 
 namespace RTCodingExercise.WebMVC
@@ -21,9 +22,8 @@ namespace RTCodingExercise.WebMVC
 
             services.AddMassTransit(x =>
             {
-                //x.AddConsumer<ConsumerClass>();
+                x.AddConsumer<RTCConsumerClass>();
 
-                //ADD CONSUMERS HERE
                 x.UsingRabbitMq((context, cfg) =>
                 {
                     cfg.Host(Configuration["EventBusConnection"], "/", h =>
@@ -43,8 +43,6 @@ namespace RTCodingExercise.WebMVC
                     cfg.ExchangeType = ExchangeType.Fanout;
                 });
             });
-
-            services.AddMassTransitHostedService();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

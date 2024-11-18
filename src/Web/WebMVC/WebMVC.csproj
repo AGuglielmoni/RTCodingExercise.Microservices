@@ -12,6 +12,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+		<PackageReference Include="GreenPipes" Version="4.0.1" />
 		<PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
 		<PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" Version="6.0.1" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="6.0.1" />
@@ -30,13 +31,14 @@
 		<PackageReference Include="Serilog.Sinks.Http" Version="8.0.0-beta.9" />
 		<PackageReference Include="Serilog.Sinks.Seq" Version="5.1.0" />
 		<PackageReference Include="System.Data.SqlClient" version="4.8.3" />
-		<PackageReference Include="MassTransit" Version="7.2.1" />
-		<PackageReference Include="MassTransit.AspNetCore" Version="7.2.1" />
-		<PackageReference Include="MassTransit.RabbitMQ" Version="7.2.1" />
+		<PackageReference Include="MassTransit" Version="8.3.1" />
+		<PackageReference Include="MassTransit.AspNetCore" Version="7.3.1" />
+		<PackageReference Include="MassTransit.RabbitMQ" Version="8.3.1" />
 	</ItemGroup>
 
 	<ItemGroup>
-	  <ProjectReference Include="..\..\Services\Catalog\Catalog.Domain\Catalog.Domain.csproj" />
+	  <ProjectReference Include="..\..\Services\Catalog\Catalog.API\Catalog.API.csproj" />
+	  <ProjectReference Include="..\..\Services\Consumers\Consumers\Consumers.csproj" />
 	</ItemGroup>
 
 </Project>
